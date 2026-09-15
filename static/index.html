@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TuHao.RICH · CS2 饰品查价</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#FFF7F2; --panel:#FFEFE6; --card:#FFFFFF; --accent:#FF8FA3; --accent2:#FF6B8A;
+  --text:#5D4E4E; --sub:#A99898; --green:#3BBE82; --red:#FF7A7A; --orange:#FF9500; --blue:#1E90FF;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:linear-gradient(135deg,#FF8FA3,#FF6B8A);color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:20;box-shadow:0 2px 10px rgba(255,107,138,.25);}
+.header h1{font-size:20px;font-weight:700;letter-spacing:.5px;}
+.header p{font-size:12px;opacity:.92;margin-top:3px;}
+.tabs{display:flex;gap:10px;margin:14px 16px 0;}
+.tab{flex:1;padding:10px 0;text-align:center;border-radius:14px;background:#fff;color:var(--sub);font-weight:600;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+.tab.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(255,107,138,.35);}
+.page{display:none;padding:14px 16px 40px;}
+.page.active{display:block;}
+.searchbar{display:flex;gap:8px;align-items:stretch;}
+.searchbar input{flex:1;border:1.5px solid #FFD3DD;border-radius:14px;padding:12px 14px;font-size:15px;outline:none;background:#fff;color:var(--text);min-width:0;}
+.searchbar input:focus{border-color:var(--accent);}
+select{border:1.5px solid #FFD3DD;border-radius:14px;padding:0 10px;font-size:14px;background:#fff;color:var(--text);outline:none;max-width:110px;}
+.btn{background:var(--accent2);color:#fff;border:none;border-radius:14px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn:active{transform:scale(.97);}
+.btn.ghost{background:#fff;color:var(--accent2);border:1.5px solid #FFD3DD;}
+.card{background:var(--card);border-radius:16px;padding:12px;margin-top:12px;box-shadow:0 3px 10px rgba(242,217,204,.5);display:flex;gap:12px;align-items:center;cursor:pointer;transition:transform .08s;}
+.card:active{transform:scale(.985);}
+.card img{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#F6F0EC;flex-shrink:0;}
+.card .info{flex:1;min-width:0;}
+.card .name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card .meta{font-size:11px;color:var(--sub);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px;}
+.wear{padding:1px 8px;border-radius:8px;font-size:11px;font-weight:600;background:#FFF1D6;color:#C98A2D;}
+.card .price{text-align:right;flex-shrink:0;}
+.card .price .p{font-size:16px;font-weight:800;color:var(--accent2);}
+.card .price .r{font-size:11px;font-weight:700;margin-top:2px;}
+.up{color:var(--green);} .down{color:var(--red);}
+.hint{text-align:center;color:var(--sub);padding:40px 10px;font-size:14px;}
+.error{text-align:center;color:var(--red);padding:30px 10px;font-size:14px;line-height:1.6;}
+.section-title{font-size:15px;font-weight:700;margin:18px 0 4px;display:flex;align-items:center;gap:6px;}
+.section-title::before{content:"";width:4px;height:16px;background:var(--accent);border-radius:2px;}
+.sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.sector{background:#fff;border-radius:14px;padding:12px;box-shadow:0 3px 8px rgba(242,217,204,.5);cursor:pointer;}
+.sector .sname{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sector .sval{font-size:15px;font-weight:800;color:var(--accent2);margin-top:4px;}
+.sector .schg{font-size:11px;font-weight:700;margin-top:2px;}
+.back{display:inline-block;padding:8px 14px;border-radius:12px;background:#fff;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;box-shadow:0 2px 6px rgba(0,0,0,.05);}
+#chartWrap{background:#fff;border-radius:16px;padding:12px;box-shadow:0 3px 10px rgba(242,217,204,.5);margin-top:12px;}
+#chartBox{width:100%;height:320px;}
+.chart-ctrls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;}
+.chart-ctrls .cbtn{padding:7px 13px;border-radius:10px;font-size:12px;font-weight:600;background:#FFF1F5;color:var(--accent2);border:1px solid #FFD3DD;cursor:pointer;}
+.chart-ctrls .cbtn.active{background:var(--accent2);color:#fff;border-color:var(--accent2);}
+.chart-title{font-size:15px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.loading{text-align:center;color:var(--sub);padding:30px;font-size:14px;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>TuHao.RICH</h1>
+  <p>CS2 饰品实时查价 · 趋势曲线</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('search')">查价</div>
+  <div class="tab" onclick="switchTab('sector')">热门板块</div>
+</div>
+
+<div id="page-search" class="page active">
+  <div class="searchbar">
+    <input id="kw" placeholder="输入饰品名，如：裹手 | 云杉 DDPAT" />
+    <select id="wear">
+      <option value="">全部磨损</option>
+      <option>崭新出厂</option>
+      <option>略有磨损</option>
+      <option>久经沙场</option>
+      <option>破损不堪</option>
+      <option>战痕累累</option>
+    </select>
+  </div>
+  <div style="margin-top:10px;"><button class="btn" style="width:100%;" onclick="doQuery()">查询实时价格</button></div>
+  <div id="resultList"></div>
+</div>
+
+<div id="page-sector" class="page">
+  <div id="sectorContent"></div>
+</div>
+
+<div id="page-chart" class="page">
+  <div class="back" onclick="backFromChart()">← 返回</div>
+  <div class="chart-title" id="chartTitle">饰品趋势</div>
+  <div class="chart-ctrls" id="rangeBtns"></div>
+  <div class="chart-ctrls" id="platformBtns"></div>
+  <div id="chartWrap"><div id="chartBox"></div></div>
+  <div id="chartStatus" class="loading" style="display:none;">加载中…</div>
+</div>
+
+<script>
+const RANGES = [["近1月","1"],["近3月","3"],["近6月","6"],["近1年","12"],["近3年","36"]];
+const PLATFORMS = [["全部","all"],["BUFF","buff"],["IGXE","igxe"],["悠悠","youpin"],["Steam","steam"],["C5","c5game"]];
+let chartRange = "1", chartPlatform = "all", chartSkinId = "", chartName = "";
+let myChart = null;
+let chartFromSector = false;
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  if(t==='search'){document.querySelectorAll('.tab')[0].classList.add('active');document.getElementById('page-search').classList.add('active');}
+  else{document.querySelectorAll('.tab')[1].classList.add('active');document.getElementById('page-sector').classList.add('active');loadSectors();}
+}
+
+function fmt(v){
+  if(v===null||v===undefined||v==="") return "—";
+  let n=Number(v); if(isNaN(n)) return String(v);
+  return "¥"+n.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function pct(v){
+  if(v===null||v===undefined||v==="") return "";
+  let n=Number(v); if(isNaN(n)) return "";
+  let up=n>=0; return (up?"▲":"▼")+Math.abs(n).toFixed(2)+"%";
+}
+function isUp(v){return Number(v)>=0;}
+
+async function post(url,body){
+  try{
+    const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+    return await r.json();
+  }catch(e){return {ok:false,error:'网络错误：'+e.message};}
+}
+async function get(url){
+  try{
+    const r = await fetch(url);
+    return await r.json();
+  }catch(e){return {ok:false,error:'网络错误：'+e.message};}
+}
+
+function doQuery(){
+  const name=document.getElementById('kw').value.trim();
+  if(!name){alert('请输入饰品名称');return;}
+  const wear=document.getElementById('wear').value;
+  document.getElementById('resultList').innerHTML='<div class="loading">查询中…</div>';
+  post('/api/query',{name,wear}).then(res=>{
+    if(!res.ok){document.getElementById('resultList').innerHTML='<div class="error">'+escapeHtml(res.error||'查询失败')+'</div>';return;}
+    if(!res.items||!res.items.length){document.getElementById('resultList').innerHTML='<div class="hint">未找到匹配饰品</div>';return;}
+    let html='';
+    res.items.forEach(it=>{
+      const up=isUp(it.ratio);
+      html+='<div class="card" onclick="openChart(\''+it.id+'\',\''+esc(it.name)+'\')">'
+        +(it.img?'<img src="'+esc(it.img)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'<img style="visibility:hidden">')
+        +'<div class="info"><div class="name">'+escapeHtml(it.name)+'</div>'
+        +'<div class="meta">'+(it.wear?'<span class="wear">'+escapeHtml(it.wear)+'</span>':'')
+        +(it.platform?'<span>平台 '+escapeHtml(it.platform)+'</span>':'')
+        +(it.sell_count?'<span>在售 '+escapeHtml(it.sell_count)+'</span>':'')
+        +(it.buy_price?'<span>求购 '+fmt(it.buy_price)+'</span>':'')+'</div></div>'
+        +'<div class="price"><div class="p">'+fmt(it.price)+'</div>'
+        +(it.ratio!==''&&it.ratio!=null?'<div class="r '+(up?'up':'down')+'">'+pct(it.ratio)+'</div>':'')+'</div></div>';
+    });
+    document.getElementById('resultList').innerHTML=html;
+  });
+}
+
+function openChart(id,name){
+  chartSkinId=id; chartName=name;
+  chartRange='1'; chartPlatform='all';
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-chart').classList.add('active');
+  document.getElementById('chartTitle').textContent=name;
+  buildCtrlBtns();
+  loadChart();
+}
+function backFromChart(){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  if(chartFromSector){document.getElementById('page-sector').classList.add('active');document.querySelectorAll('.tab')[1].classList.add('active');}
+  else{document.getElementById('page-search').classList.add('active');document.querySelectorAll('.tab')[0].classList.add('active');}
+}
+function buildCtrlBtns(){
+  document.getElementById('rangeBtns').innerHTML=RANGES.map(r=>'<span class="cbtn'+(r[1]===chartRange?' active':'')+'" onclick="setRange(\''+r[1]+'\')">'+r[0]+'</span>').join('');
+  document.getElementById('platformBtns').innerHTML=PLATFORMS.map(p=>'<span class="cbtn'+(p[1]===chartPlatform?' active':'')+'" onclick="setPlatform(\''+p[1]+'\')">'+p[0]+'</span>').join('');
+}
+function setRange(r){chartRange=r;buildCtrlBtns();loadChart();}
+function setPlatform(p){chartPlatform=p;buildCtrlBtns();loadChart();}
+
+function loadChart(){
+  document.getElementById('chartStatus').style.display='block';
+  document.getElementById('chartBox').style.display='none';
+  post('/api/chart',{id:chartSkinId,range:chartRange,platform:chartPlatform}).then(res=>{
+    document.getElementById('chartStatus').style.display='none';
+    document.getElementById('chartBox').style.display='block';
+    if(!res.ok){alert(res.error||'趋势数据获取失败');return;}
+    renderChart(res.data||[]);
+  });
+}
+
+function renderChart(rows){
+  if(!myChart){myChart=echarts.init(document.getElementById('chartBox'));}
+  const times=rows.map(r=>{const d=new Date(r[0]*1000);return (d.getMonth()+1)+'-'+d.getDate();});
+  const prices=rows.map(r=>r[1]);
+  const sells=rows.map(r=>r[2]);
+  const buys=rows.map(r=>r[3]);
+  const opt={
+    grid:{left:52,right:52,top:20,bottom:30},
+    tooltip:{trigger:'axis',backgroundColor:'#fff',borderColor:'#eee',textStyle:{color:'#5D4E4E'}},
+    xAxis:{type:'category',data:times,axisLine:{lineStyle:{color:'#ddd'}},axisLabel:{color:'#999',fontSize:10}},
+    yAxis:[
+      {type:'value',name:'价格¥',nameTextStyle:{color:'#999'},axisLabel:{color:'#999',fontSize:10},splitLine:{lineStyle:{color:'#f0f0f0'}}},
+      {type:'value',name:'数量',nameTextStyle:{color:'#999'},axisLabel:{color:'#999',fontSize:10},splitLine:{show:false}}
+    ],
+    series:[
+      {name:'在售价',type:'line',data:prices,smooth:true,showSymbol:false,lineStyle:{width:2.5,color:'#FF9500'},itemStyle:{color:'#FF9500'}},
+      {name:'在售数',type:'line',yAxisIndex:1,data:sells,smooth:true,showSymbol:false,lineStyle:{width:2,color:'#1E90FF'},itemStyle:{color:'#1E90FF'}},
+      {name:'求购价',type:'line',data:buys,smooth:true,showSymbol:false,lineStyle:{width:1.5,color:'#B0B0B0'},itemStyle:{color:'#B0B0B0'}}
+    ]
+  };
+  myChart.setOption(opt,true);
+  myChart.resize();
+}
+
+function loadSectors(){
+  document.getElementById('sectorContent').innerHTML='<div class="loading">加载板块…</div>';
+  get('/api/sectors').then(res=>{
+    if(!res.ok){document.getElementById('sectorContent').innerHTML='<div class="error">'+escapeHtml(res.error||'加载失败')+'</div>';return;}
+    renderSectors(res.sectors||[]);
+  });
+}
+function renderSectors(list){
+  let html='<div class="section-title">热门板块</div><div class="sector-grid">';
+  list.forEach(s=>{
+    const up=isUp(s.change_index_percent);
+    html+='<div class="sector" onclick="openSector(\''+(s.id||'')+'\',\''+esc(s.name)+'\')">'
+      +'<div class="sname">'+escapeHtml(s.name)+'</div>'
+      +'<div class="sval">'+fmt(s.index_value)+'</div>'
+      +(s.change_index_percent!==null&&s.change_index_percent!==undefined?'<div class="schg '+(up?'up':'down')+'">'+pct(s.change_index_percent)+'</div>':'')
+      +'</div>';
+  });
+  html+='</div>';
+  document.getElementById('sectorContent').innerHTML=html;
+}
+function openSector(id,name){
+  document.getElementById('sectorContent').innerHTML='<div class="back" onclick="loadSectors()">← 返回板块</div><div class="section-title">'+escapeHtml(name)+'</div><div class="loading">加载饰品…</div>';
+  post('/api/sector_skins',{category_id:id}).then(res=>{
+    if(!res.ok){document.getElementById('sectorContent').innerHTML='<div class="back" onclick="loadSectors()">← 返回板块</div><div class="error">'+escapeHtml(res.error||'加载失败')+'</div>';return;}
+    let html='<div class="back" onclick="loadSectors()">← 返回板块</div><div class="section-title">'+escapeHtml(name)+'</div>';
+    (res.skins||[]).forEach(s=>{
+      const up=isUp(s.change_index_percent);
+      html+='<div class="card" onclick="chartFromSector=true;openChart(\''+(s.id||'')+'\',\''+esc(s.name)+'\')">'
+        +(s.img?'<img src="'+esc(s.img)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'">':'<img style="visibility:hidden">')
+        +'<div class="info"><div class="name">'+escapeHtml(s.name)+'</div>'
+        +'<div class="meta">'+(s.current_sell_count?'<span>在售 '+escapeHtml(s.current_sell_count)+'</span>':'')+'</div></div>'
+        +'<div class="price"><div class="p">'+fmt(s.index_value)+'</div>'
+        +(s.change_index_percent!==null&&s.change_index_percent!==undefined?'<div class="r '+(up?'up':'down')+'">'+pct(s.change_index_percent)+'</div>':'')+'</div></div>';
+    });
+    document.getElementById('sectorContent').innerHTML=html;
+  });
+}
+
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function esc(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
+document.getElementById('kw').addEventListener('keydown',e=>{if(e.key==='Enter')doQuery();});
+window.addEventListener('resize',()=>{if(myChart)myChart.resize();});
+</script>
+</body>
+</html>
